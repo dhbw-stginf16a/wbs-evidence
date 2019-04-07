@@ -118,24 +118,32 @@ def value_range(frames, column_name):
     }
 
 
+# Function for calculation of the Basismass for a given frame (picture)
 def calc_m(frame):
     m_vals = []
+    # iterating over the features
     for key in frame:
+        # creating a model for a single Basismass
         specific_m = {
             'emotions': [],
         }
+        # check that the key is not the number of seconds since this is just our frame id and does not help with determining the Basismass
         if key != "sec":
+            # iterating over the emotions
             for emotion in emotions:
+                #determining whether the emotions have the value for a feature assigned, that is represented in the frame
                 if emotions[emotion][key] == frame[key]:
+                    # adding a hardcoded Basismass
+                    # ToDo: different variations of the Basismass based on the actual values?
                     specific_m.update(value=0.8)
                     specific_m['emotions'].append(emotion)
-                    m_vals.append(specific_m)
-    print(m_vals)
+                # add the dict for the specific Basismas to the array of Basismasse
+                m_vals.append(specific_m)
+    return m_vals
 
 
 # Main Entry for the application
 result = import_csv("data/emo_muster_1_1.csv")
 result = evaluate_frames(result)
-calc_m(result[0])
 
 
