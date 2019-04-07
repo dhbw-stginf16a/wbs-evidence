@@ -118,10 +118,24 @@ def value_range(frames, column_name):
     }
 
 
+def calc_m(frame):
+    m_vals = []
+    for key in frame:
+        specific_m = {
+            'emotions': [],
+        }
+        if key != "sec":
+            for emotion in emotions:
+                if emotions[emotion][key] == frame[key]:
+                    specific_m.update(value=0.8)
+                    specific_m['emotions'].append(emotion)
+                    m_vals.append(specific_m)
+    print(m_vals)
+
+
 # Main Entry for the application
 result = import_csv("data/emo_muster_1_1.csv")
 result = evaluate_frames(result)
-
-print(result)
+calc_m(result[0])
 
 
