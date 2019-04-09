@@ -192,10 +192,15 @@ def DSCombination(Dic1, Dic2):
 
 def iterate_d_s(dict_masses):
     print(dict_masses)
+    #get length of array
     l = len(dict_masses['masse'])
+    #iterate over array with index
     for x in range(len((dict_masses['masse']))):
+        #check that there is still a 'next element'
         if(x < l-1):
+            #accumulate this and the next basismass
             m1 = DSCombination(dict_masses['masse'][x], dict_masses['masse'][x + 1])
+            #update the next basismass with the new value, so that the next iterations accumulates the next basismas with the result
             dict_masses['masse'][x+1].update(m1)
     print(dict_masses)
 
