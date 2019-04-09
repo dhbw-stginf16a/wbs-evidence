@@ -21,6 +21,7 @@
 
 # Package Definition
 import csv
+import operator
 import sys
 import json
 
@@ -119,7 +120,9 @@ def value_range(frames, column_name):
     }
 
 
-# Function for calculation of the Basismass for a given frame (picture)
+"""
+This function takes the information that is given on a frame (values for the features) and calculates the basismasse for the emotions based on this
+"""
 def calc_m(frame):
     m_vals = {
         'sec': frame['sec'],
@@ -145,53 +148,60 @@ def calc_m(frame):
             m_vals['masse'].append(specific_m)
     return m_vals
 
-
-def DSCombination(Dic1, Dic2):
+"""
+This function takes two basismasse (m1 and m2) and accumulates them based on the Dempster-Shafer-Theory
+"""
+def DSCombination(m1, m2):
     # extract the frame discernment
-    sets = set(Dic1.keys()).union(set(Dic2.keys()))
+    sets = set(m1.keys()).union(set(m2.keys()))
     Result = {}
     # Combination process
-    for i in Dic1.keys():
-        for j in Dic2.keys():
+    for i in m1.keys():
+        #set error to zero
+        k = 0
+        for j in m2.keys():
             intersect = ''.join(set(str(i)).intersection(set(str(j))))
             #check for intersection
             if not set(str(i)).isdisjoint(set(str(j))):
                 #if an intersection exists (meaning that there ist no conflict) we can simply multiply the Basismasse
                 if intersect in Result:
-                    Result[intersect] += Dic1[i] * Dic2[j]
+                    Result[intersect] += m1[i] * m2[j]
                 else:
-                    Result[intersect] = Dic1[i] * Dic2[j]
+                    Result[intersect] = m1[i] * m2[j]
             #if there ist a conflict we need to check whether it is a 'real' conflict or a conflict with O (omega)
             elif i == 'O' or j == 'O':
                 #if i is omega then the multiplied values are the new value for j
                 if i == 'O' and j != "O":
                     if j in Result:
-                        Result[j] += Dic1[i] * Dic2[j]
+                        Result[j] += m1[i] * m2[j]
                     else:
-                        Result[j] = Dic1[i] * Dic2[j]
+                        Result[j] = m1[i] * m2[j]
                 #if j is omega then the multiplied values are the new value for i
                 elif i != 'O' and j == 'O':
                     if i in Result:
-                        Result[i] += Dic1[i] * Dic2[j]
+                        Result[i] += m1[i] * m2[j]
                     else:
-                        Result[i] = Dic1[i] * Dic2[j]
-                #the only possibility left is a 'real' conflict where none of the potenzmengen is omega
+                        Result[i] = m1[i] * m2[j]
+            #the only possibility left is a 'real' conflict where none of the potenzmengen is omega
             else:
-                k = Dic1[i] * Dic2[j]
-                if k != 1:
-                    for x in Result:
-                        Result[x] /= (1-k)
-                else:
-                    print("Error: K = 1")
+                # add the product of the basismasse to the conflict
+                k += m1[i] * m2[j]
+        if k > 0:
+            if(k != 1):
+                for x in Result:
+                    Result[x] /= (1-k)
+            else:
+                print("Error: K = 1")
     # normalize the results
     #f = sum(list(Result.values()))
     #print(f)
-    print(Result)
     return Result
 
 
+"""
+This function takes an array of Basismass values (calculated by calc_m) and accumulates all of them 
+"""
 def iterate_d_s(dict_masses):
-    print(dict_masses)
     #get length of array
     l = len(dict_masses['masse'])
     #iterate over array with index
@@ -202,14 +212,36 @@ def iterate_d_s(dict_masses):
             m1 = DSCombination(dict_masses['masse'][x], dict_masses['masse'][x + 1])
             #update the next basismass with the new value, so that the next iterations accumulates the next basismas with the result
             dict_masses['masse'][x+1].update(m1)
-    print(dict_masses)
+        else:
+            return dict_masses['masse'][x]
 
+def calc_plaus(mass):
+    plausibility = {}
+    for emo in emotions:
+        plausibility.update({emo: 0})
+        for val in mass:
+            if emo in val:
+                plausibility[emo] += mass[val]
+    return plausibility
+
+
+def check_plaus(plausibility):
+    return max(plausibility.items(), key=operator.itemgetter(1))[0]
+
+def check_frames(frames):
+    result = {}
+    for frame in frames:
+        initial_m = calc_m(frame)
+        final_m = iterate_d_s(initial_m)
+        plausibility = calc_plaus(final_m)
+        emotion = check_plaus(plausibility)
+        result[frame['sec']] = emotion
+    return result
 
 # Main Entry for the application
-result = import_csv("data/emo_muster_1_1.csv")
-result = evaluate_frames(result)
-m = calc_m(result[0])
-iterate_d_s(m)
+frames = import_csv("data/emo_muster_1_1.csv")
+frames = evaluate_frames(frames)
+print(json.dumps(check_frames(frames), indent=4))
 
 
 
