@@ -318,7 +318,7 @@ def print_result(result):
 
 
 # Main Entry for the application
-if sys.argv[1] is not None:
+if len(sys.argv) > 1:
     emotion_frames = import_csv(sys.argv[1])
     emotion_frames = evaluate_features(emotion_frames)
     plausibility = map_plausibility(emotion_frames)
