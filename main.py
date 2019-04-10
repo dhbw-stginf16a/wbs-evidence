@@ -188,10 +188,10 @@ def ds_accum(m1, m2):
         A dictionary containing the accumulated masses of m1 and m2
     """
     result_m = {}
+    # initialize error to zero
+    k = 0
     # Combination process
     for i in m1.keys():
-        # initialize error to zero
-        k = 0
         for j in m2.keys():
             intersect = ''.join(set(str(i)).intersection(set(str(j))))
             # check for intersection
@@ -201,7 +201,7 @@ def ds_accum(m1, m2):
                     result_m[intersect] += m1[i] * m2[j]
                 else:
                     result_m[intersect] = m1[i] * m2[j]
-            # if there ist a conflict we need to check whether it is a 'real' conflict or a conflict with O (omega)
+            # if there is a conflict we need to check whether it is a 'real' conflict or a conflict with O (omega)
             elif i == 'O' or j == 'O':
                 # if i is omega then the multiplied values are the new value for j
                 if i == 'O' and j != "O":
@@ -219,12 +219,13 @@ def ds_accum(m1, m2):
             else:
                 # add the product of the basismasse to the conflict
                 k += m1[i] * m2[j]
-        if k > 0:
-            if k != 1:
-                for x in result_m:
-                    result_m[x] /= (1-k)
-            else:
-                print("Error: K = 1")
+    if k > 0:
+        if k != 1:
+            for x in result_m:
+                result_m[x] /= (1-k)
+        else:
+            print("Error: K = 1")
+
     return result_m
 
 
@@ -241,11 +242,12 @@ def iterate_ds_accum(dict_masses):
     l = len(dict_masses['masse'])
     # iterate over array with index
     for x in range(len((dict_masses['masse']))):
-        #check that there is still a 'next element'
+        # check that there is still a 'next element'
         if x < l-1:
-            #accumulate this and the next basismass
+            # accumulate this and the next basismass
             m1 = ds_accum(dict_masses['masse'][x], dict_masses['masse'][x + 1])
-            #update the next basismass with the new value, so that the next iterations accumulates the next basismas with the result
+            # update the next basismass with the new value,
+            # so that the next iterations accumulates the next basismas with the result
             dict_masses['masse'][x+1].update(m1)
         else:
             return dict_masses['masse'][x]
@@ -295,6 +297,11 @@ def map_plausibility(frames):
     for frame in frames:
         initial_m = calc_m(frame)
         final_m = iterate_ds_accum(initial_m)
+
+        # checks if the mass sums up to 1
+        # check = sum(final_m.values())
+        # print(f"Check: ${check}")
+
         plaus = calc_plaus(final_m)
         emotion = check_max_plaus(plaus)
         # Use second as key and set the calculated plausibility
