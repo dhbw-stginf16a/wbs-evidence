@@ -22,9 +22,7 @@
 # Package Definition
 import csv
 import operator
-import json
-
-#TO-DO doku 0=small, n/a=None
+import sys
 
 
 def create_emotion_object(fob, lea, rea, lbd, rbd, hnc, vnc, lcw, rcw, ma):
@@ -44,7 +42,7 @@ def create_emotion_object(fob, lea, rea, lbd, rbd, hnc, vnc, lcw, rcw, ma):
 
 emotions = {
     "n": create_emotion_object(['s'], ['m'], ['m'], ['m'], ['m'], ['s'], ['s'], ['s'], ['s'], [None]),
-    "s": create_emotion_object(['h'], ['s', 'm'], ['s', 'm'], ['m'], ['m'], ['m'], [None], ['s', 'm'], ['s', 'm'], [None]),
+    "s": create_emotion_object(['l'], ['s', 'm'], ['s', 'm'], ['m'], ['m'], ['m'], [None], ['s', 'm'], ['s', 'm'], [None]),
     "f": create_emotion_object(['l'], ['l'], ['l'], ['l'], ['l'], ['l'], [None], [None], [None], ['l']),
     "h": create_emotion_object(['m'], ['l'], ['l'], ['l'], ['l'], ['s'], [None], ['m', 'l'], ['m', 'l'], [None]),
     "d": create_emotion_object(['s'], ['s'], ['s'], ['s'], ['s'], ['s', 'm', 'l'], [None], ['m'], ['m'], [None])
@@ -280,7 +278,8 @@ def check_max_plaus(plausibility):
     Return:
         Emotion with the highest plausibility
     """
-    return max(plausibility.items(), key=operator.itemgetter(1))[0]
+    plaus = max(plausibility.items(), key=operator.itemgetter(1))[0]
+    return plaus
 
 
 def map_plausibility(frames):
@@ -293,7 +292,7 @@ def map_plausibility(frames):
     Return:
         dictionary containing the determined emotion for each frame
     """
-    result = {}
+    result = []
     for frame in frames:
         initial_m = calc_m(frame)
         final_m = iterate_ds_accum(initial_m)
@@ -305,15 +304,30 @@ def map_plausibility(frames):
         plaus = calc_plaus(final_m)
         emotion = check_max_plaus(plaus)
         # Use second as key and set the calculated plausibility
-        result[frame['sec']] = emotion
+        frame_result = plaus.copy()
+        frame_result['Nr'] = frame['sec']
+        frame_result['Emotion'] = emotion
+        result.append(frame_result)
     return result
 
 
+def print_result(result):
+    for r in result:
+        print("{:2}: [n: {:4.2f}, s: {:4.2f}, f: {:4.2f}, h: {:4.2f}, d: {:4.2f}] --> Classification: {}"
+              .format(r['Nr'], r['n'], r['s'], r['f'], r['h'], r['d'], r['Emotion']))
+
+
 # Main Entry for the application
-emotion_frames = import_csv("data/emo_muster_1_1.csv")
-emotion_frames = evaluate_features(emotion_frames)
-plausibility = map_plausibility(emotion_frames)
-print(json.dumps(plausibility, indent=4))
+if sys.argv[1] is not None:
+    emotion_frames = import_csv(sys.argv[1])
+    emotion_frames = evaluate_features(emotion_frames)
+    plausibility = map_plausibility(emotion_frames)
+    # print(json.dumps(plausibility, indent=4))
+    print_result(plausibility)
+else:
+    print("Please provide the filelocation of the desired csv-file.")
+    print("e.g. python main.py data/emo_muster_1_1.csv")
+    print("Terminating...")
 
 
 
