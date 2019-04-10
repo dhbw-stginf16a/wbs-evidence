@@ -223,6 +223,7 @@ def ds_accum(m1, m2):
                 result_m[x] /= (1-k)
         else:
             print("Error: K = 1")
+            exit()
 
     return result_m
 
